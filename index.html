@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Points sur un cercle</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+        }
+        canvas {
+            width: 80% !important;
+            height: auto !important;
+            background: #f9f9f9;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <h2>Points sur un cercle</h2>
+
+    <label>Liste des entiers (ex: 3,4,6) :</label><br>
+    <input type="text" id="inputList" value="3,4,6" style="margin-bottom:10px;">
+    <button onclick="generate()">Afficher</button>
+
+    <p id="stats"></p>
+
+    <canvas id="myChart"></canvas>
+</div>
+
+<script>
+class CirclePoints {
+    constructor(nList) {
+        this.nList = nList;
+        this.allPoints = [];
+        this.uniquePoints = [];
+        this.generatePoints();
+    }
+
+    pointsOnCircle(n) {
+        let points = [];
+        for (let i = 1; i <= n; i++) {
+            let s = i / n;
+            let angle = s * 2 * Math.PI;
+            let x = Math.cos(angle);
+            let y = Math.sin(angle);
+            points.push([x, y]);
+        }
+        return points;
+    }
+
+    generatePoints() {
+        let all = [];
+        this.nList.forEach(n => {
+            all.push(...this.pointsOnCircle(n));
+        });
+        this.allPoints = all;
+        let unique = new Set(all.map(p => p.toString()));
+        this.uniquePoints = Array.from(unique).map(str => str.split(',').map(Number));
+    }
+
+    getStats() {
+        return {
+            total: this.allPoints.length,
+            uniques: this.uniquePoints.length
+        };
+    }
+}
+
+let chart = null;
+
+function generate() {
+    let input = document.getElementById('inputList').value;
+    let nList = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+
+    let cp = new CirclePoints(nList);
+    let stats = cp.getStats();
+
+    document.getElementById('stats').innerText = 
+        `Total points : ${stats.total} | Points uniques : ${stats.uniques}`;
+
+    let dataAll = cp.allPoints.map(p => ({ x: p[0], y: p[1] }));
+    let dataUnique = cp.uniquePoints.map(p => ({ x: p[0], y: p[1] }));
+
+    if (chart) chart.destroy();
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Tous les points',
+                    data: dataAll,
+                    backgroundColor: 'blue',
+                    pointRadius: 3
+                },
+                {
+                    label: 'Points uniques',
+                    data: dataUnique,
+                    backgroundColor: 'red',
+                    pointStyle: 'cross',
+                    pointRadius: 5
+                }
+            ]
+        },
+        options: {
+            maintainAspectRatio: true,
+            scales: {
+                x: { min: -1.2, max: 1.2 },
+                y: { min: -1.2, max: 1.2 }
+            },
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+</script>
+
+</body>
+</html>
